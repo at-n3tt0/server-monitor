@@ -1,0 +1,224 @@
+{
+  "backend": {
+    "port": 3000,
+    "host": "0.0.0.0"
+  },
+  "monitoring": {
+    "defaultIntervalSeconds": 30,
+    "uiHistoryLimit": 120,
+    "pingSamples": 4
+  },
+  "auth": {
+    "sessionTtlHours": 12,
+    "sessionCookieName": "infra_monitor_session",
+    "secureCookies": false,
+    "bootstrapAdmin": {
+      "username": "admin",
+      "passwordHash": null,
+      "password": null
+    }
+  },
+  "retention": {
+    "checkResultsDays": 30,
+    "agentMetricsDays": 30,
+    "networkMetricsDays": 30,
+    "eventsDays": 180,
+    "alertsDays": 365
+  },
+  "maintenance": {
+    "cleanupIntervalMinutes": 60,
+    "vacuumIntervalHours": 24
+  },
+  "targets": [
+    {
+      "id": "srv-01-ping",
+      "name": "srv-01 ping",
+      "type": "ping",
+      "host": "192.168.2.205",
+      "url": null,
+      "port": null,
+      "timeout": 3000,
+      "intervalSeconds": 30,
+      "secret": null,
+      "enabled": true,
+      "thresholds": {
+        "warningLatencyMs": 120,
+        "criticalLatencyMs": 250,
+        "warningPacketLoss": 15,
+        "criticalPacketLoss": 50,
+        "cpuUsageWarning": 80,
+        "cpuUsageCritical": 90,
+        "memoryUsageWarning": 80,
+        "memoryUsageCritical": 90,
+        "diskUsageWarning": 80,
+        "diskUsageCritical": 90,
+        "jitterWarningMs": 30,
+        "jitterCriticalMs": 60,
+        "oscillationWindowMinutes": 15,
+        "oscillationChangesWarning": 3,
+        "oscillationChangesCritical": 6
+      },
+      "metadata": {
+        "lookupHostname": null,
+        "dnsServers": [],
+        "interfaceName": null,
+        "notes": "Target real complementar para disponibilidade ICMP do srv-01.",
+        "snmp": {}
+      },
+      "createdAt": "2026-04-06T22:20:00.000Z",
+      "updatedAt": "2026-04-06T22:20:00.000Z"
+    },
+    {
+      "id": "srv-01-tcp-53",
+      "name": "srv-01 tcp 53",
+      "type": "tcp",
+      "host": "192.168.2.205",
+      "url": null,
+      "port": 53,
+      "timeout": 5000,
+      "intervalSeconds": 30,
+      "secret": null,
+      "enabled": true,
+      "thresholds": {
+        "warningLatencyMs": 120,
+        "criticalLatencyMs": 320,
+        "warningPacketLoss": 15,
+        "criticalPacketLoss": 50,
+        "cpuUsageWarning": 80,
+        "cpuUsageCritical": 90,
+        "memoryUsageWarning": 80,
+        "memoryUsageCritical": 90,
+        "diskUsageWarning": 80,
+        "diskUsageCritical": 90,
+        "jitterWarningMs": 30,
+        "jitterCriticalMs": 60,
+        "oscillationWindowMinutes": 15,
+        "oscillationChangesWarning": 3,
+        "oscillationChangesCritical": 6
+      },
+      "metadata": {
+        "lookupHostname": null,
+        "dnsServers": [],
+        "interfaceName": null,
+        "notes": "Target real complementar para disponibilidade da porta DNS do srv-01.",
+        "snmp": {}
+      },
+      "createdAt": "2026-04-06T22:20:00.000Z",
+      "updatedAt": "2026-04-06T22:20:00.000Z"
+    },
+    {
+      "id": "srv-01-tcp-445",
+      "name": "srv-01 tcp 445",
+      "type": "tcp",
+      "host": "192.168.2.205",
+      "url": null,
+      "port": 445,
+      "timeout": 5000,
+      "intervalSeconds": 30,
+      "secret": null,
+      "enabled": true,
+      "thresholds": {
+        "warningLatencyMs": 150,
+        "criticalLatencyMs": 400,
+        "warningPacketLoss": 15,
+        "criticalPacketLoss": 50,
+        "cpuUsageWarning": 80,
+        "cpuUsageCritical": 90,
+        "memoryUsageWarning": 80,
+        "memoryUsageCritical": 90,
+        "diskUsageWarning": 80,
+        "diskUsageCritical": 90,
+        "jitterWarningMs": 30,
+        "jitterCriticalMs": 60,
+        "oscillationWindowMinutes": 15,
+        "oscillationChangesWarning": 3,
+        "oscillationChangesCritical": 6
+      },
+      "metadata": {
+        "lookupHostname": null,
+        "dnsServers": [],
+        "interfaceName": null,
+        "notes": "Target real complementar para disponibilidade SMB principal do srv-01.",
+        "snmp": {}
+      },
+      "createdAt": "2026-04-06T22:20:00.000Z",
+      "updatedAt": "2026-04-06T22:20:00.000Z"
+    },
+    {
+      "id": "srv-01-tcp-139",
+      "name": "srv-01 tcp 139",
+      "type": "tcp",
+      "host": "192.168.2.205",
+      "url": null,
+      "port": 139,
+      "timeout": 5000,
+      "intervalSeconds": 30,
+      "secret": null,
+      "enabled": true,
+      "thresholds": {
+        "warningLatencyMs": 150,
+        "criticalLatencyMs": 400,
+        "warningPacketLoss": 15,
+        "criticalPacketLoss": 50,
+        "cpuUsageWarning": 80,
+        "cpuUsageCritical": 90,
+        "memoryUsageWarning": 80,
+        "memoryUsageCritical": 90,
+        "diskUsageWarning": 80,
+        "diskUsageCritical": 90,
+        "jitterWarningMs": 30,
+        "jitterCriticalMs": 60,
+        "oscillationWindowMinutes": 15,
+        "oscillationChangesWarning": 3,
+        "oscillationChangesCritical": 6
+      },
+      "metadata": {
+        "lookupHostname": null,
+        "dnsServers": [],
+        "interfaceName": null,
+        "notes": "Target real complementar para disponibilidade NetBIOS/SMB legado do srv-01.",
+        "snmp": {}
+      },
+      "createdAt": "2026-04-06T22:20:00.000Z",
+      "updatedAt": "2026-04-06T22:20:00.000Z"
+    },
+    {
+      "id": "d8ea5bda-ba82-4368-ad6d-82a1cb16e66a",
+      "name": "srv-01 agent",
+      "type": "agent",
+      "host": null,
+      "url": "http://192.168.2.205:9090",
+      "port": null,
+      "timeout": 15000,
+      "intervalSeconds": 30,
+      "secret": "AgentSrv01#2026",
+      "enabled": true,
+      "thresholds": {
+        "warningLatencyMs": 200,
+        "criticalLatencyMs": 500,
+        "warningPacketLoss": 15,
+        "criticalPacketLoss": 50,
+        "cpuUsageWarning": 80,
+        "cpuUsageCritical": 90,
+        "memoryUsageWarning": 80,
+        "memoryUsageCritical": 90,
+        "diskUsageWarning": 80,
+        "diskUsageCritical": 90,
+        "jitterWarningMs": 30,
+        "jitterCriticalMs": 60,
+        "oscillationWindowMinutes": 15,
+        "oscillationChangesWarning": 3,
+        "oscillationChangesCritical": 6
+      },
+      "metadata": {
+        "lookupHostname": null,
+        "dnsServers": [],
+        "interfaceName": null,
+        "notes": null,
+        "snmp": {}
+      },
+      "createdAt": "2026-04-06T22:04:09.182Z",
+      "updatedAt": "2026-04-06T22:04:09.182Z"
+    }
+  ]
+}

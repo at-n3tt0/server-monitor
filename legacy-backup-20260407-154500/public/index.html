@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Server Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="header-left">
+    <span class="logo">⬡</span>
+    <div>
+      <h1>Server Monitor</h1>
+      <span id="last-update">Aguardando...</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="ws-status" class="ws-badge disconnected"><span class="ws-dot"></span> Conectando...</div>
+    <button class="btn-outline" onclick="openModal('modal-add')">+ Adicionar</button>
+  </div>
+</header>
+
+<!-- ── Summary Bar ── -->
+<div class="summary-bar">
+  <div class="summary-item"><span class="summary-value" id="sum-total">0</span><span class="summary-label">Total</span></div>
+  <div class="summary-item up"><span class="summary-value" id="sum-up">0</span><span class="summary-label">Online</span></div>
+  <div class="summary-item down"><span class="summary-value" id="sum-down">0</span><span class="summary-label">Offline</span></div>
+  <div class="summary-item degraded"><span class="summary-value" id="sum-degraded">0</span><span class="summary-label">Lento/Alto</span></div>
+  <div class="summary-item"><span class="summary-value" id="sum-interval">30s</span><span class="summary-label">Intervalo</span></div>
+</div>
+
+<!-- ── Main ── -->
+<main>
+  <section class="targets-section">
+    <div id="targets-grid" class="targets-grid">
+      <div class="loading-placeholder"><div class="spinner"></div><p>Conectando ao servidor...</p></div>
+    </div>
+  </section>
+
+  <aside class="alerts-panel">
+    <div class="panel-header">
+      <h2>Eventos Recentes</h2>
+      <button class="btn-ghost" onclick="clearAlerts()">Limpar</button>
+    </div>
+    <div id="alerts-list" class="alerts-list">
+      <p class="empty-text">Nenhum evento ainda.</p>
+    </div>
+  </aside>
+</main>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Detail Modal — Conectividade (ping/http/tcp) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="modal-detail" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-detail')">
+  <div class="modal">
+    <div class="modal-header">
+      <div><h2 id="detail-name">—</h2><span id="detail-meta">—</span></div>
+      <button class="btn-ghost" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-stats">
+        <div class="stat-box"><span class="stat-val" id="detail-status">—</span><span class="stat-lbl">Status</span></div>
+        <div class="stat-box"><span class="stat-val" id="detail-rt">—</span><span class="stat-lbl">Resposta</span></div>
+        <div class="stat-box"><span class="stat-val" id="detail-uptime">—</span><span class="stat-lbl">Uptime</span></div>
+        <div class="stat-box"><span class="stat-val" id="detail-checks">—</span><span class="stat-lbl">Checks</span></div>
+      </div>
+      <div class="gf-panel">
+        <div class="gf-panel-header">
+          <span class="gf-panel-title">Tempo de Resposta</span>
+          <div class="gf-panel-stats">
+            <div class="gf-stat"><span class="gf-stat-label">Atual</span><span class="gf-stat-value" id="detail-stat-current">—</span></div>
+            <div class="gf-stat"><span class="gf-stat-label">Média</span><span class="gf-stat-value" id="detail-stat-avg">—</span></div>
+            <div class="gf-stat"><span class="gf-stat-label">Máx</span><span class="gf-stat-value" id="detail-stat-max">—</span></div>
+          </div>
+        </div>
+        <div class="gf-panel-chart"><canvas id="detail-chart"></canvas></div>
+      </div>
+      <div class="detail-footer">
+        <span id="detail-last-check">—</span>
+        <div>
+          <button class="btn-outline" id="detail-check-btn">Verificar Agora</button>
+          <button class="btn-danger"  id="detail-remove-btn">Remover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Detail Modal — Agente (métricas do servidor) -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="modal-agent" class="modal-overlay modal-wide" onclick="if(event.target===this)closeModal('modal-agent')">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <h2 id="ag-name">—</h2>
+        <span id="ag-hostname">—</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-outline" id="ag-check-btn">Verificar Agora</button>
+        <button class="btn-danger"  id="ag-remove-btn">Remover</button>
+        <button class="btn-ghost"   onclick="closeModal('modal-agent')">✕</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="modal-tabs">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Visão Geral</button>
+      <button class="tab-btn"        data-tab="cpu"      onclick="switchTab('cpu')">CPU</button>
+      <button class="tab-btn"        data-tab="memory"   onclick="switchTab('memory')">Memória</button>
+      <button class="tab-btn"        data-tab="disk"     onclick="switchTab('disk')">Disco</button>
+      <button class="tab-btn"        data-tab="network"  onclick="switchTab('network')">Rede</button>
+    </div>
+
+    <div class="modal-body modal-scroll">
+
+      <!-- ── Overview ── -->
+      <div class="tab-pane active" id="tab-overview">
+        <div class="overview-grid">
+          <div class="ov-card">
+            <div class="ov-label">CPU</div>
+            <div class="ov-val" id="ov-cpu">—</div>
+            <div class="progress-bar-wrap"><div class="progress-bar cpu-bar" id="ov-cpu-bar"></div></div>
+            <div class="ov-sub" id="ov-cpu-sub">—</div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-label">Memória RAM</div>
+            <div class="ov-val" id="ov-mem">—</div>
+            <div class="progress-bar-wrap"><div class="progress-bar mem-bar" id="ov-mem-bar"></div></div>
+            <div class="ov-sub" id="ov-mem-sub">—</div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-label">Disco Principal</div>
+            <div class="ov-val" id="ov-disk">—</div>
+            <div class="progress-bar-wrap"><div class="progress-bar disk-bar" id="ov-disk-bar"></div></div>
+            <div class="ov-sub" id="ov-disk-sub">—</div>
+          </div>
+          <div class="ov-card">
+            <div class="ov-label">Uptime</div>
+            <div class="ov-val" id="ov-uptime">—</div>
+            <div class="ov-sub" id="ov-uptime-sub">—</div>
+          </div>
+        </div>
+        <div class="info-grid">
+          <div class="info-row"><span class="info-lbl">Hostname</span><span id="inf-hostname">—</span></div>
+          <div class="info-row"><span class="info-lbl">Sistema</span><span id="inf-os">—</span></div>
+          <div class="info-row"><span class="info-lbl">Arquitetura</span><span id="inf-arch">—</span></div>
+          <div class="info-row"><span class="info-lbl">CPU Model</span><span id="inf-cpu-model">—</span></div>
+          <div class="info-row"><span class="info-lbl">Núcleos</span><span id="inf-cores">—</span></div>
+          <div class="info-row"><span class="info-lbl">Processos</span><span id="inf-procs">—</span></div>
+          <div class="info-row"><span class="info-lbl">Load Average</span><span id="inf-load">—</span></div>
+          <div class="info-row"><span class="info-lbl">Última Leitura</span><span id="inf-last">—</span></div>
+        </div>
+        <!-- Top processes -->
+        <div id="top-procs-section" style="display:none">
+          <h3 class="section-title">Top Processos (CPU)</h3>
+          <table class="proc-table">
+            <thead><tr><th>PID</th><th>Usuário</th><th>CPU%</th><th>MEM%</th><th>Comando</th></tr></thead>
+            <tbody id="top-procs-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CPU Tab ── -->
+      <div class="tab-pane" id="tab-cpu">
+        <div class="gf-panel">
+          <div class="gf-panel-header">
+            <span class="gf-panel-title">Uso de CPU %</span>
+            <div class="gf-panel-stats">
+              <div class="gf-stat"><span class="gf-stat-label">Atual</span><span class="gf-stat-value" id="ag-cpu-stat-current">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Média</span><span class="gf-stat-value" id="ag-cpu-stat-avg">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Máx</span><span class="gf-stat-value" id="ag-cpu-stat-max">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Mín</span><span class="gf-stat-value" id="ag-cpu-stat-min">—</span></div>
+            </div>
+          </div>
+          <div class="gf-panel-chart gf-panel-chart-tall"><canvas id="ag-cpu-chart"></canvas></div>
+        </div>
+        <div id="cpu-cores-grid" class="cores-grid" style="margin-top:12px"></div>
+      </div>
+
+      <!-- ── Memory Tab ── -->
+      <div class="tab-pane" id="tab-memory">
+        <div class="gf-panel">
+          <div class="gf-panel-header">
+            <span class="gf-panel-title">Uso de Memória RAM %</span>
+            <div class="gf-panel-stats">
+              <div class="gf-stat"><span class="gf-stat-label">Atual</span><span class="gf-stat-value" id="ag-mem-stat-current">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Média</span><span class="gf-stat-value" id="ag-mem-stat-avg">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Máx</span><span class="gf-stat-value" id="ag-mem-stat-max">—</span></div>
+              <div class="gf-stat"><span class="gf-stat-label">Mín</span><span class="gf-stat-value" id="ag-mem-stat-min">—</span></div>
+            </div>
+          </div>
+          <div class="gf-panel-chart gf-panel-chart-tall"><canvas id="ag-mem-chart"></canvas></div>
+        </div>
+        <div class="mem-breakdown" id="mem-breakdown" style="margin-top:12px"></div>
+      </div>
+
+      <!-- ── Disk Tab ── -->
+      <div class="tab-pane" id="tab-disk">
+        <div id="disk-list" class="disk-list"></div>
+      </div>
+
+      <!-- ── Network Tab ── -->
+      <div class="tab-pane" id="tab-network">
+        <div id="network-list" class="network-list"></div>
+      </div>
+
+    </div><!-- /.modal-body -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- Add Target Modal -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div id="modal-add" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-add')">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Adicionar Alvo</h2>
+      <button class="btn-ghost" onclick="closeModal('modal-add')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="add-form" onsubmit="submitAddForm(event)">
+        <div class="form-row">
+          <label>Nome</label>
+          <input type="text" id="f-name" placeholder="Meu Servidor" required />
+        </div>
+        <div class="form-row">
+          <label>Tipo de Monitoramento</label>
+          <select id="f-type" onchange="toggleFormFields()">
+            <option value="agent">Agente (CPU / RAM / Disco)</option>
+            <option value="ping">Ping (ICMP)</option>
+            <option value="http">HTTP / HTTPS</option>
+            <option value="tcp">Porta TCP</option>
+          </select>
+        </div>
+
+        <!-- agent -->
+        <div id="f-agent-section">
+          <div class="form-row">
+            <label>URL do Agente</label>
+            <input type="text" id="f-agent-url" placeholder="http://192.168.1.10:9090" />
+          </div>
+          <div class="form-row">
+            <label>Secret (opcional)</label>
+            <input type="password" id="f-agent-secret" placeholder="deixe vazio se não configurou" />
+          </div>
+          <div class="form-hint">
+            Instale o agente no servidor alvo:<br>
+            <code>node agent.js 9090 [secret]</code>
+          </div>
+        </div>
+
+        <!-- ping / tcp -->
+        <div id="f-host-row" style="display:none">
+          <div class="form-row">
+            <label>Host / IP</label>
+            <input type="text" id="f-host" placeholder="192.168.1.1" />
+          </div>
+        </div>
+
+        <!-- http -->
+        <div id="f-url-row" style="display:none">
+          <div class="form-row">
+            <label>URL</label>
+            <input type="url" id="f-url" placeholder="https://meusite.com" />
+          </div>
+        </div>
+
+        <!-- tcp port -->
+        <div id="f-port-row" style="display:none">
+          <div class="form-row">
+            <label>Porta</label>
+            <input type="number" id="f-port" placeholder="22" min="1" max="65535" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <label>Timeout (ms)</label>
+          <input type="number" id="f-timeout" value="5000" min="500" max="30000" />
+        </div>
+        <div class="form-row" id="f-degraded-row" style="display:none">
+          <label>Marcar como lento acima de (ms)</label>
+          <input type="number" id="f-degraded" value="500" min="0" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-ghost" onclick="closeModal('modal-add')">Cancelar</button>
+          <button type="submit" class="btn-primary">Adicionar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

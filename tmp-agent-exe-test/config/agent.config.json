@@ -1,0 +1,8 @@
+﻿{
+    "port":  9393,
+    "secret":  "StandaloneSecret123",
+    "hostAlias":  "STANDALONE-AGENT",
+    "bindHost":  "127.0.0.1",
+    "logLevel":  "info",
+    "serviceName":  "InfraWatchAgentExeTest"
+}

@@ -1,0 +1,7 @@
+{
+  "services": [
+    "nginx",
+    "php8.3-fpm",
+    "mysql"
+  ]
+}
